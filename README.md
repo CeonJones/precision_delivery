@@ -1,2 +1,2 @@
-# ROS2 Template Package
-This repo is used as a template to build a ROS2 package 
+# Precision-Deleivery Packer
+This repo is package for precision-delivery using ROS2 ecosystem 
