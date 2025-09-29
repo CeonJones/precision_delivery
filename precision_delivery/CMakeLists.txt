@@ -56,6 +56,8 @@ install(PROGRAMS
   scripts/target_estimator.py
   scripts/guidance_publisher.py
   scripts/testingsignals_SINL.py
+  scripts/signal_pub.py
+  scripts/signal_sub.py
   # scripts/client_member_function.py
   # scripts/service_member_function.py
   DESTINATION lib/${PROJECT_NAME}
