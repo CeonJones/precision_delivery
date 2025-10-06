@@ -109,8 +109,18 @@ class MultisinePublisher(Node):
                     self.get_logger().info(f"Loading most recent input signal from: {filepath}")
                     data = np.loadtxt(filepath, delimiter=',', skiprows=1)  # Skip header
                     time = data[:, 0]
-                    signal = data[:, 1:].reshape(-1, self.servo_num)
-                    return {'time': time, 'signal': signal, 'time_step': time_step, 'total_time': total_time}
+                    signal_data = data[:, 1:]  # All columns after time are signal channels
+                    
+                    # Determine number of channels from CSV data
+                    num_channels = signal_data.shape[1]
+                    self.get_logger().info(f"CSV contains {len(time)} samples with {num_channels} channels")
+                    
+                    # Check if CSV channels match parameter
+                    if num_channels != self.servo_num:
+                        self.get_logger().warn(f"CSV has {num_channels} channels but servo_num parameter is {self.servo_num}. Using CSV channel count.")
+                        self.servo_num = num_channels
+                    
+                    return {'time': time, 'signal': signal_data, 'time_step': time_step, 'total_time': total_time}
             else:
                 self.get_logger().warn(f"Signals directory not found: {search_dir}")
             
