@@ -58,6 +58,7 @@ install(PROGRAMS
   scripts/testingsignals_SINL.py
   scripts/signal_pub.py
   scripts/signal_sub.py
+  scripts/feedback_node.py
   # scripts/client_member_function.py
   # scripts/service_member_function.py
   DESTINATION lib/${PROJECT_NAME}
