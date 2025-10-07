@@ -13,8 +13,8 @@ class SignalSubscriber(Node):
         # parameters
         self.declare_parameter('min_angle_deg', -90.0)
         self.declare_parameter('max_angle_deg',  90.0)
-        self.declare_parameter('min_pwm', 550)
-        self.declare_parameter('max_pwm', 2400)
+        self.declare_parameter('min_pwm', 1000)
+        self.declare_parameter('max_pwm', 2200)
         self.declare_parameter('servo_start_index', 1)  # map channel 0 -> SERVO1 by default
         self.declare_parameter('cmd_rate_hz', 20.0)     # rate-limit CommandLong
 
