@@ -2,48 +2,59 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray
-from mavros_msgs.msg import OverrideRCIn
 from mavros_msgs.srv import CommandLong
 import numpy as np
+import time
 
 class SignalSubscriber(Node):
     def __init__(self):
         super().__init__('signal_subscriber')
-        self.subscription = self.create_subscription(
-            Float64MultiArray,
-            'servo_n',
-            self.listener_callback,
-            10
-        )
 
-        # Publisher to MAVROS RC override topic
-        self.rc_pub = self.create_publisher(OverrideRCIn, 'mavros/rc/override', 10)
+        # parameters
+        self.declare_parameter('min_angle_deg', -90.0)
+        self.declare_parameter('max_angle_deg',  90.0)
+        self.declare_parameter('min_pwm', 550)
+        self.declare_parameter('max_pwm', 2400)
+        self.declare_parameter('servo_start_index', 1)  # map channel 0 -> SERVO1 by default
+        self.declare_parameter('cmd_rate_hz', 20.0)     # rate-limit CommandLong
+
+        self.min_angle: float = (self.get_parameter('min_angle_deg').value)
+        self.max_angle: float = (self.get_parameter('max_angle_deg').value)
+        self.min_pwm: int = (self.get_parameter('min_pwm').value)
+        self.max_pwm: int = (self.get_parameter('max_pwm').value)
+        self.servo_base: int = (self.get_parameter('servo_start_index').value)
+        self.period: float = (1.0 / float(self.get_parameter('cmd_rate_hz').value))
+        self._next_send_ts = 0.0
+        
+        self.subscription = self.create_subscription(
+            Float64MultiArray, 'servo_n', self.listener_callback, 10)
+
         
         # Service client for MAVLink servo commands
         self.servo_client = self.create_client(CommandLong, 'mavros/cmd/command')
-        
-        # Wait for service to be available (but don't block startup)
         if not self.servo_client.wait_for_service(timeout_sec=2.0):
-            self.get_logger().warn('MAVROS cmd/command service not available - servo commands will be queued')
-        else:
-            self.get_logger().info('MAVROS cmd/command service available')
+            self.get_logger().warn('mavros/cmd/command service not ready, will retry')
         
-        self.get_logger().info("Servo signal subscriber initialized.")
+        self.msg_count = 0 # Message counter for logging
+        self.get_logger().info("Single signal subscriber initialized. (CommandLong)")
         self.get_logger().info("Listening to servo_n topic")
         self.get_logger().info("Using mavros/cmd/command service for servo control")
         
-        # Add message counter for debugging
-        self.message_count = 0
 
     def listener_callback(self, msg: Float64MultiArray):
         # Increment message counter
-        self.message_count += 1
+        now = time.monotonic()
+        if now < self._next_send_ts:
+            return  # Rate limit
+        self._next_send_ts = now + self.period
+        self.msg_count += 1
+        values = np.asarray(msg.data, dtype=np.float64)
         
         # convert incoming array to numpy array for easier handling
         values: np.ndarray = np.array(msg.data, dtype=np.float64)
         
         # Log message reception
-        self.get_logger().info(f"Received message #{self.message_count} with {len(values)} servo values")
+        self.get_logger().info(f"Received message #{self.msg_count} with {len(values)} servo values")
         
         # Send individual servo commands for each channel
         for i, radian_value in enumerate(values):
@@ -52,43 +63,33 @@ class SignalSubscriber(Node):
             # Create MAVLink servo command request
             request = CommandLong.Request()
             request.command = 183  # MAV_CMD_DO_SET_SERVO
-            request.param1 = float(i + 1)  # Servo number (1-8 for PixRacer)
+            request.param1 = float(self.servo_base + i)  # Servo number (1-8 for PixRacer)
             request.param2 = float(pwm_value)  # PWM value in microseconds
-            request.param3 = 0.0  # Not used
-            request.param4 = 0.0  # Not used
-            request.param5 = 0.0  # Not used
-            request.param6 = 0.0  # Not used
-            request.param7 = 0.0  # Not used
+            request.param3 = request.param4 = request.param5 = request.param6 = request.param7 = 0.0
             request.broadcast = False  # Send to specific vehicle
+            self.servo_client.call_async(request)
             
-            # Call service asynchronously (non-blocking)
-            future = self.servo_client.call_async(request)
             
             # Log the command (less frequently to avoid spam)
-            if self.message_count % 10 == 0:  # Log every 10th message
-                self.get_logger().info(f"Servo {i+1}: {radian_value:.4f} rad -> {pwm_value} PWM")
+            if self.msg_count % 10 == 0:  # Log every 10th message
+                self.get_logger().info(f"Sent {len(values)} cmd(s). Example ch{self.servo_base}: {pwm_value}us")
 
     # --- Helper functions for conversions servo control ---  
-    def radian_to_pwm(self, 
-                        radian_value: float,
-                        min_angle: float = -90.0,
-                        max_angle: float = 90.0,
-                        min_pwm: int = 1000,
-                        max_pwm: int = 2000) -> int:
+    def radian_to_pwm(self, radian_value: float) -> int:
 
         """
         Convert angle to radians to PWM microseconds
         Default:
             For right now with SG90 servo: -90 to +90 degrees maps to 1000 to 2000 microseconds
-            For other servos, adjust min_angle, max_angle, min_pwn, max_pwn accordingly
+            For other servos, adjust min_angle, max_angle, min_pwm, max_pwm accordingly
         """
         degree_value = np.rad2deg(radian_value)
 
         # Normalize degree value to [0, 1]
-        alpha_norm = (degree_value - min_angle) / (max_angle - min_angle)
+        alpha_norm = (degree_value - self.min_angle) / (self.max_angle - self.min_angle)
 
         # Map alpha_norm to PWM range
-        pwm_value = int(np.clip(min_pwm + alpha_norm * (max_pwm - min_pwm), min_pwm, max_pwm))
+        pwm_value = int(np.clip(self.min_pwm + alpha_norm * (self.max_pwm - self.min_pwm), self.min_pwm, self.max_pwm))
         return pwm_value
 
 def main(args=None):
