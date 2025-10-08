@@ -37,7 +37,7 @@ class MultisinePublisher(Node):
                 ('total_time', 10.0),       # total maneuver duration in seconds (5 s = 250 samples at 50 Hz)
                 ('save_csv', True),        # save generated multisine to CSV for reproducibility
                 ('csv_path', ''),          # optional path override for CSV storage (blank = default)
-                ('csv_filename', f'input_signals{timestr}.csv'),  # default timestamped filename
+                ('csv_filename', f'input_signal.csv'),  # default timestamped filename
                 ('use_csv', True),          # load existing CSV if available instead of regenerating
                 ('loop', True)             # repeat maneuver continuously when True (single run if False)
 
