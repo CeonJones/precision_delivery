@@ -30,7 +30,7 @@ class MultisinePublisher(Node):
             # multisine generation and control parameters
             parameters=[
                 ('servo_num', 1),          # number of servo channels to excite (1 = single SG90 on Pixracer)
-                ('amp_deg', 5.0),          # multisine amplitude in degrees (±5° = gentle, linear excitation)
+                ('amp_deg', 45.0),          # multisine amplitude in degrees (±5° = gentle, linear excitation)
                 ('min_freq_hz', 1),      # lowest excitation frequency in Hz (0.1 Hz = 10-s oscillation)
                 ('max_freq_hz', 2),      # highest excitation frequency in Hz (1.5 Hz = ~0.67-s oscillation)
                 ('time_step', 0.02),       # sampling period in seconds (0.02 s = 50 Hz update rate)
