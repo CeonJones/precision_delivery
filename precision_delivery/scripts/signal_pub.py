@@ -17,6 +17,10 @@ from typing import Dict
 
 from ros2_sid.inputdesign import multi_sine
 
+# Yogurt
+import subprocess
+
+
 timestr = time.strftime("%Y%m%d-%H%M%S")
 
 class MultisinePublisher(Node):
@@ -40,7 +44,6 @@ class MultisinePublisher(Node):
                 ('csv_filename', f'input_signal.csv'),  # default timestamped filename
                 ('use_csv', True),          # load existing CSV if available instead of regenerating
                 ('loop', True)             # repeat maneuver continuously when True (single run if False)
-
             ]
         )
         
@@ -61,6 +64,10 @@ class MultisinePublisher(Node):
         self.k: int = 0
         
         self.timer = self.create_timer(self.maneuver['time_step'], self.timer_callback)
+
+        # Adjusting Loop number Yogurt
+        self.loop_count = 0
+        self.max_loops = 3  # Manually set the number of loops you want to run
     
     def timer_callback(self):
         if self.k < len(self.maneuver['time']):
@@ -71,12 +78,38 @@ class MultisinePublisher(Node):
             self.array_pub.publish(msg)
             self.k += 1
         else:
-            if self.loop:
+            if self.loop and self.loop_count < self.max_loops -1: # Yogurt
+                self.loop_count +=1 # Yogurt
                 self.k = 0
                 self.get_logger().info('Restarting maneuver loop.')
             else:
-                self.get_logger().info('Maneuver complete.')
+                # Yogurt
+                self.get_logger().info('Maneuver complete — signaling tmux to stop rosbag and start next script.')
                 self.timer.cancel()
+
+                # tmux name
+                session_name = "precision_delivery"
+                try:
+                    # Step 1: stop rosbag (Pane 2)
+                    self.get_logger().info('Stopping rosbag recording...')
+                    subprocess.run(f"tmux send-keys -t {session_name}:0.2 C-c", shell=True)
+                    # Step 2: wait a few seconds for rosbag to finalize
+                    time.sleep(10)
+
+
+                    # Step 3: Split pane vertically (new one below pane 3)
+                    subprocess.run(f"tmux split-window -v -t {session_name}:0.3", shell=True)
+                    self.get_logger().info('Created vertical split for new script.')
+                    
+                    # Step 3: open new terminal and run Parcer.py
+                    next_script = "../develop_ws/data/Output_Data/Parcer.py" #Yogurt
+                    self.get_logger().info(f'Launching {next_script} in bottom-right pane...')
+                    subprocess.run(f"tmux send-keys -t {session_name}:0.4 \"/usr/bin/python3 '{next_script}'\" C-m", shell=True)
+
+                    self.get_logger().info('Next script launched successfully in bottom-right pane.')
+
+                except Exception as e:
+                    self.get_logger().error(f"Failed to trigger tmux commands: {e}")
 
     def build_maneuver(self) -> Dict[str, np.ndarray]:
         """
