@@ -48,15 +48,15 @@ class MultisinePublisher(Node):
             ]
         )
         
-        print(os.cwd)
-
         # fetching parameters
         self.use_csv: bool = (self.get_parameter('use_csv').value)
         self.loop: bool = (self.get_parameter('loop').value)
+        self.file_dir: str = os.chdir(self.get_parameter('csv_path').value)
+        print("file directory", self.file_dir)
 
         # caching most frequently used parameter (amount of servos)
         self.servo_num: int = (self.get_parameter('servo_num').value)
-
+        
         # building maneuver
         self.maneuver = self.build_maneuver()
 
