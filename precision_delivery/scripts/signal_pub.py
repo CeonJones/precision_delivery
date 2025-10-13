@@ -69,6 +69,7 @@ class MultisinePublisher(Node):
         # Adjusting Loop number Yogurt
         self.loop_count = 0
         self.max_loops = 3  # Manually set the number of loops you want to run
+        self.prev_dir: str = None
     
     def timer_callback(self):
         if self.k < len(self.maneuver['time']):
@@ -121,6 +122,7 @@ class MultisinePublisher(Node):
         - signal: (N_samples, servo_num) float64
         - time_step: float (time_step)
         """
+        self.prev_dir = os.getcwd()
         time_step: float = self.get_parameter('time_step').value
         total_time: float = self.get_parameter('total_time').value
         csv_path: str = self.get_parameter('csv_path').value
@@ -181,7 +183,7 @@ class MultisinePublisher(Node):
                     if num_channels != self.servo_num:
                         self.get_logger().warn(f"CSV has {num_channels} channels but servo_num parameter is {self.servo_num}. Using CSV channel count.")
                         self.servo_num = num_channels
-                    
+                    os.getcwd(self.prev_dir)
                     return {'time': time, 'signal': signal_data, 'time_step': time_step, 'total_time': total_time}
             else:
                 self.get_logger().warn(f"Signals directory not found: {search_dir}")
