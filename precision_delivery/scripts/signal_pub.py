@@ -51,12 +51,10 @@ class MultisinePublisher(Node):
         # fetching parameters
         self.use_csv: bool = (self.get_parameter('use_csv').value)
         self.loop: bool = (self.get_parameter('loop').value)
-        self.file_dir: str = os.chdir(self.get_parameter('csv_path').value)
-        print("file directory", self.file_dir)
 
         # caching most frequently used parameter (amount of servos)
         self.servo_num: int = (self.get_parameter('servo_num').value)
-        
+
         # building maneuver
         self.maneuver = self.build_maneuver()
 
@@ -128,17 +126,44 @@ class MultisinePublisher(Node):
         csv_path: str = self.get_parameter('csv_path').value
         save_csv: bool = self.get_parameter('save_csv').value
         csv_filename: str = self.get_parameter('csv_filename').value
-
         filepath = os.path.join(csv_path, csv_filename)
 
         # Optionally load from CSV
         if self.use_csv:
+            # first we will check if the Input_Data exists otherwise we will automate the signal
+            #TODO: Refactor duplicate code
+            search_dir:str = self.get_parameter('csv_path').value
+            print("changing directory, directory is ", os.getcwd())
+            if os.path.exists(search_dir):
+                os.chdir(search_dir)
+                csv_files = [f for f in os.listdir(search_dir) if f.startswith("input_signals") and f.endswith(".csv")]
+                if csv_files:
+                    latest_file = max(csv_files, key=lambda f: os.path.getmtime(os.path.join(search_dir, f)))
+                    filepath = os.path.join(search_dir, latest_file)
+                    self.get_logger().info(f"Loading most recent input signal from: {filepath}")
+                    data = np.loadtxt(filepath, delimiter=',', skiprows=1)  # Skip header
+                    time = data[:, 0]
+                    signal_data = data[:, 1:]  # All columns after time are signal channels
+                    # Determine number of channels from CSV data
+                    num_channels = signal_data.shape[1]
+                    self.get_logger().info(f"CSV contains {len(time)} samples with {num_channels} channels")
+                    
+                    # Check if CSV channels match parameter
+                    if num_channels != self.servo_num:
+                        self.get_logger().warn(f"CSV has {num_channels} channels but servo_num parameter is {self.servo_num}. Using CSV channel count.")
+                        self.servo_num = num_channels
+                    
+                    return {'time': time, 'signal': signal_data, 'time_step': time_step, 'total_time': total_time}                
+            else:
+                self.get_logger().warn(f"Custom Input not Found Generating Automated Signal: {self.get_parameter('csv_path').value}")
+
             # Search in the precision_delivery signals directory
             package_share_dir = get_package_share_directory('precision_delivery')
+            print("package share directory is ", package_share_dir)
             signals_dir = os.path.join(package_share_dir, 'data', 'signals')
             search_dir = signals_dir
-            
             if os.path.exists(search_dir):
+                #TODO: Refactor duplicate code
                 csv_files = [f for f in os.listdir(search_dir) if f.startswith("input_signals") and f.endswith(".csv")]
                 if csv_files:
                     latest_file = max(csv_files, key=lambda f: os.path.getmtime(os.path.join(search_dir, f)))
