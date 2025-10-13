@@ -20,7 +20,6 @@ from ros2_sid.inputdesign import multi_sine
 # Yogurt
 import subprocess
 
-
 timestr = time.strftime("%Y%m%d-%H%M%S")
 
 class MultisinePublisher(Node):
@@ -40,13 +39,17 @@ class MultisinePublisher(Node):
                 ('time_step', 0.02),       # sampling period in seconds (0.02 s = 50 Hz update rate)
                 ('total_time', 10.0),       # total maneuver duration in seconds (5 s = 250 samples at 50 Hz)
                 ('save_csv', True),        # save generated multisine to CSV for reproducibility
+                # This was my attempt at fixing the location issue (it did not work)
                 ('csv_path', '/develop_ws/data/Input_Data/'),          # optional path override for CSV storage (blank = default)
+                #       - ./data:/develop_ws/data:rw 
                 ('csv_filename', f'input_signal.csv'),  # default timestamped filename
                 ('use_csv', True),          # load existing CSV if available instead of regenerating
                 ('loop', True)             # repeat maneuver continuously when True (single run if False)
             ]
         )
         
+        print(os.cwd)
+
         # fetching parameters
         self.use_csv: bool = (self.get_parameter('use_csv').value)
         self.loop: bool = (self.get_parameter('loop').value)
