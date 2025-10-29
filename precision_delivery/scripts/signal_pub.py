@@ -16,6 +16,7 @@ import os, threading, time
 from typing import Dict
 
 from ros2_sid.inputdesign import multi_sine
+from ros2_sid.msg import SIDCmd
 
 # Yogurt
 import subprocess
@@ -59,7 +60,7 @@ class MultisinePublisher(Node):
         self.maneuver = self.build_maneuver()
 
         # publishing servo_n topic for subscriber 
-        self.array_pub: Publisher = self.create_publisher(Float64MultiArray, 'servo_n', 10)
+        self.array_pub: Publisher = self.create_publisher(SIDCmd, 'servo_n', 10)
 
         # internal counter for maneuver progress
         self.k: int = 0
@@ -75,7 +76,8 @@ class MultisinePublisher(Node):
         if self.k < len(self.maneuver['time']):
 
             row = self.maneuver['signal'][self.k, :]
-            msg = Float64MultiArray()
+            msg = SIDCmd()
+            msg.header.stamp = self.get_clock().now().to_msg()
             msg.data = row.tolist()
             self.array_pub.publish(msg)
             self.k += 1
