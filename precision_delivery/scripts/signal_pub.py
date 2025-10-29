@@ -77,8 +77,10 @@ class MultisinePublisher(Node):
 
             row = self.maneuver['signal'][self.k, :]
             msg = SIDCmd()
+            data_msg = Float64MultiArray()
+            data_msg.data = row.tolist()
             msg.header.stamp = self.get_clock().now().to_msg()
-            msg.data = row.tolist()
+            msg.data = data_msg
             self.array_pub.publish(msg)
             self.k += 1
         else:
