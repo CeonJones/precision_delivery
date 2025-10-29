@@ -20,10 +20,6 @@ find_package(rclpy REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/SIDCmd.msg"
- )
-
 # Include Cpp "include" directory
 include_directories(include)
 # Create Cpp executable

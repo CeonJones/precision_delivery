@@ -16,7 +16,7 @@ import os, threading, time
 from typing import Dict
 
 from ros2_sid.inputdesign import multi_sine
-from ros2_sid.msg import SIDCmd
+from sid_interface.msg import SIDCmd
 
 # Yogurt
 import subprocess
