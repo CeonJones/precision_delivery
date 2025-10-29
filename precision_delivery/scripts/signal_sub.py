@@ -3,6 +3,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray
 from mavros_msgs.srv import CommandLong
+from sid_interface.msg import SIDCmd
 import numpy as np
 import time
 
@@ -27,8 +28,7 @@ class SignalSubscriber(Node):
         self._next_send_ts = 0.0
         
         self.subscription = self.create_subscription(
-            Float64MultiArray, 'servo_n', self.listener_callback, 10)
-
+            SIDCmd, 'servo_n', self.listener_callback, 10)
         
         # Service client for MAVLink servo commands
         self.servo_client = self.create_client(CommandLong, 'mavros/cmd/command')
