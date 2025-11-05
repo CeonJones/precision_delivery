@@ -83,8 +83,8 @@ class SignalSubscriber(Node):
             For right now with SG90 servo: -90 to +90 degrees maps to 1000 to 2000 microseconds
             For other servos, adjust min_angle, max_angle, min_pwm, max_pwm accordingly
         """
-        degree_value = np.rad2deg(radian_value)
-
+        # degree_value = np.rad2deg(radian_value)
+        degree_value = radian_value # This is assumed that we don't need to convert radians to degrees
         # Normalize degree value to [0, 1]
         alpha_norm = (degree_value - self.min_angle) / (self.max_angle - self.min_angle)
 
