@@ -38,15 +38,10 @@ install(TARGETS
 ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
-  scripts/pub_example.py
-  scripts/sub_example.py
-  scripts/goal_vis.py
-  scripts/target_estimator.py
-  scripts/guidance_publisher.py
-  scripts/testingsignals_SINL.py
   scripts/signal_pub.py
   scripts/signal_sub.py
   scripts/feedback_node.py
+  scripts/payload_pub.py
   # scripts/client_member_function.py
   # scripts/service_member_function.py
   DESTINATION lib/${PROJECT_NAME}
