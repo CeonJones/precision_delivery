@@ -45,13 +45,15 @@ class MultisinePublisher(Node):
                 #       - ./data:/develop_ws/data:rw 
                 ('csv_filename', f'input_signal.csv'),  # default timestamped filename
                 ('use_csv', True),          # load existing CSV if available instead of regenerating
-                ('loop', True)             # repeat maneuver continuously when True (single run if False)
+                ('loop', True),             # repeat maneuver continuously when True (single run if False)
+                ('parse', False)           # whether to parse the output after completion
             ]
         )
         
         # fetching parameters
         self.use_csv: bool = (self.get_parameter('use_csv').value)
         self.loop: bool = (self.get_parameter('loop').value)
+        self.parse: bool = (self.get_parameter('parse').value)
 
         # caching most frequently used parameter (amount of servos)
         self.servo_num: int = (self.get_parameter('servo_num').value)
@@ -99,6 +101,10 @@ class MultisinePublisher(Node):
                     subprocess.run(f"tmux send-keys -t {session_name}:0.2 C-c", shell=True)
                     # Step 2: wait a few seconds for rosbag to finalize
                     time.sleep(10)
+
+                    if not self.parse:
+                        self.get_logger().info('Not parsing the data.')
+                        return 
 
 
                     # Step 3: Split pane vertically (new one below pane 3)
@@ -198,8 +204,6 @@ class MultisinePublisher(Node):
         max_freq_hz: float = self.get_parameter('max_freq_hz').value
         amp_rad  = np.deg2rad(amp_deg)
 
-
-
         # error handling for multisine metrics
         if time_step <= 0.0:
             raise ValueError("time step must > 0")
@@ -257,8 +261,7 @@ class MultisinePublisher(Node):
 
         return {'time': time, 'signal': signal, 'time_step': time_step, 'total_time': total_time}
 
-        
-
+    
 def main(args=None):
     rclpy.init(args=args)
     signal_pub = MultisinePublisher()
