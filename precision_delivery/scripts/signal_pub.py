@@ -33,7 +33,7 @@ class MultisinePublisher(Node):
 
             # multisine generation and control parameters
             parameters=[
-                ('servo_num', 1),          # number of servo channels to excite (1 = single SG90 on Pixracer)
+                ('servo_num', 4),          # number of servo channels to excite (1 = single SG90 on Pixracer)
                 ('amp_deg', 45.0),          # multisine amplitude in degrees (±5° = gentle, linear excitation)
                 ('min_freq_hz', 1),      # lowest excitation frequency in Hz (0.1 Hz = 10-s oscillation)
                 ('max_freq_hz', 2),      # highest excitation frequency in Hz (1.5 Hz = ~0.67-s oscillation)
@@ -140,7 +140,7 @@ class MultisinePublisher(Node):
             print("changing directory, directory is ", os.getcwd())
             if os.path.exists(search_dir):
                 os.chdir(search_dir)
-                csv_files = [f for f in os.listdir(search_dir) if f.startswith("input_signals") and f.endswith(".csv")]
+                csv_files = [f for f in os.listdir(search_dir) if f.startswith("input_signal") and f.endswith(".csv")]
                 if csv_files:
                     latest_file = max(csv_files, key=lambda f: os.path.getmtime(os.path.join(search_dir, f)))
                     filepath = os.path.join(search_dir, latest_file)
